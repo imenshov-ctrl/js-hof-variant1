@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOF Library — Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg:       #0d0f14;
+    --surface:  #161a24;
+    --border:   #252b3b;
+    --accent:   #5cefb8;
+    --accent2:  #f85c7c;
+    --accent3:  #f9a825;
+    --text:     #d4dbe8;
+    --muted:    #5e6a83;
+    --code-bg:  #111520;
+    --radius:   10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 48px 48px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .logo span { color: var(--accent); }
+  .tagline {
+    color: var(--muted);
+    font-size: .9rem;
+    padding-bottom: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 48px;
+  }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content:'';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Cards grid ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .card-header {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .fn-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent3);
+  }
+  .fn-badge {
+    font-size: .7rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(92,239,184,.12);
+    color: var(--accent);
+    border: 1px solid rgba(92,239,184,.25);
+  }
+
+  .card-body { padding: 16px 20px; }
+
+  .desc {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  /* ── Code area ── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    color: #a8b4cc;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 12px;
+  }
+
+  /* ── Run button + output ── */
+  .run-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .run-btn:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .run-btn:active { opacity: .8; }
+
+  .output {
+    margin-top: 10px;
+    background: rgba(92,239,184,.06);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem;
+    color: var(--accent);
+    border-radius: 0 6px 6px 0;
+    display: none;
+    animation: fadeIn .2s ease;
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+  .output.error {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(248,92,124,.06);
+  }
+  .output.visible { display: block; }
+
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: none; } }
+
+  /* ── Playground ── */
+  .playground {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .playground-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .playground-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .85rem;
+    color: var(--accent3);
+    font-weight: 700;
+  }
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    background: var(--code-bg);
+    border: none;
+    color: #c9d5e8;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    padding: 16px 20px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.7;
+    display: block;
+  }
+  .playground-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #playground-output {
+    flex: 1;
+    min-width: 200px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82rem;
+    color: var(--accent);
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+  #playground-output.error { color: var(--accent2); }
+
+  /* ── Memoize bench ── */
+  .bench-row {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    margin-top: 10px;
+  }
+  .bench-row label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem; color: var(--muted);
+  }
+  .bench-row input[type=number] {
+    width: 80px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: .8rem;
+    padding: 4px 8px; border-radius: 4px; outline: none;
+  }
+
+  /* ── Chain demo ── */
+  .chain-steps {
+    display: flex; flex-direction: column; gap: 6px; margin-top: 8px;
+  }
+  .chain-step {
+    font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--code-bg); border-radius: 6px; padding: 7px 12px;
+  }
+  .step-label { color: var(--muted); min-width: 80px; }
+  .step-value { color: var(--accent); word-break: break-all; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HOF<span>.</span>js</div>
+  <div class="tagline">// Data Transformation Library · Variant 1</div>
+</header>
+
+<main>
+
+  <!-- map / filter / reduce -->
+  <div class="section">
+    <div class="section-title">1 — map / filter / reduce</div>
+    <div class="cards">
+
+      <!-- map -->
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">map</span>
+          <span class="fn-badge">pure · curried</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Власна реалізація map через for-цикл. Приймає функцію трансформації, повертає нову функцію, що приймає масив.</p>
+          <div class="code-block">const double = map(x => x * 2);
+double([1, 2, 3, 4, 5]);
+// → [2, 4, 6, 8, 10]
+
+map(x => x.toUpperCase())(['a','b','c']);
+// → ['A', 'B', 'C']</div>
+          <button class="run-btn" data-demo="map">▶ Run</button>
+          <div class="output" id="out-map"></div>
+        </div>
+      </div>
+
+      <!-- filter -->
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">filter</span>
+          <span class="fn-badge">pure · curried</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Залишає лише ті елементи, для яких предикат повертає true. Оригінальний масив не змінюється.</p>
+          <div class="code-block">const isEven = filter(x => x % 2 === 0);
+isEven([1, 2, 3, 4, 5, 6]);
+// → [2, 4, 6]
+
+filter(x => x.age >= 18)([
+  { name:'Alice', age:17 },
+  { name:'Bob',   age:22 },
+]);
+// → [{ name:'Bob', age:22 }]</div>
+          <button class="run-btn" data-demo="filter">▶ Run</button>
+          <div class="output" id="out-filter"></div>
+        </div>
+      </div>
+
+      <!-- reduce -->
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">reduce</span>
+          <span class="fn-badge">pure · curried</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Згортає масив до одного значення. Підтримує довільний початковий акумулятор, зокрема об'єкти та масиви.</p>
+          <div class="code-block">const sum = reduce((acc, x) => acc + x, 0);
+sum([1, 2, 3, 4, 5]);
+// → 15
+
+// частотна карта слів
+reduce((acc, w) =>
+  ({ ...acc, [w]: (acc[w]||0)+1 }), {})
+  (['a','b','a','c','b','a']);
+// → { a:3, b:2, c:1 }</div>
+          <button class="run-btn" data-demo="reduce">▶ Run</button>
+          <div class="output" id="out-reduce"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- compose / pipe -->
+  <div class="section">
+    <div class="section-title">2 — compose та pipe</div>
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">compose</span>
+          <span class="fn-badge">right-to-left</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">compose(f, g, h)(x) === f(g(h(x))). Математична нотація — функції застосовуються справа наліво.</p>
+          <div class="code-block">const process = compose(
+  x => x.toUpperCase(),     // 3. → 'HELLO WORLD'
+  x => x.trim(),            // 2. → 'hello world'
+  x => x.replace(/,/g,'') // 1. → 'hello, world' → ...
+);
+process('  hello, world  ');
+// → 'HELLO WORLD'</div>
+          <button class="run-btn" data-demo="compose">▶ Run</button>
+          <div class="output" id="out-compose"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">pipe</span>
+          <span class="fn-badge">left-to-right</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">pipe(f, g, h)(x) === h(g(f(x))). Зручна для читання: дані «течуть» зліва направо крізь трансформації.</p>
+          <div class="code-block">const normalize = pipe(
+  s => s.toLowerCase(),
+  s => s.trim(),
+  s => s.replace(/\s+/g, '-'),
+  s => `slug:${s}`
+);
+normalize('  Hello World  ');
+// → 'slug:hello-world'</div>
+          <button class="run-btn" data-demo="pipe">▶ Run</button>
+          <div class="output" id="out-pipe"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- curry / partial -->
+  <div class="section">
+    <div class="section-title">3 — curry</div>
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">curry</span>
+          <span class="fn-badge">N-arity → chain</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Перетворює функцію від N аргументів на ланцюжок функцій від одного аргумента. Підтримує довільну кількість аргументів.</p>
+          <div class="code-block">const add = curry((a, b, c) => a + b + c);
+
+add(1)(2)(3);   // → 6
+add(1, 2)(3);   // → 6
+add(1)(2, 3);   // → 6
+add(1, 2, 3);   // → 6
+
+const add10 = add(10);
+const add10to5 = add10(5);
+add10to5(3);    // → 18</div>
+          <button class="run-btn" data-demo="curry">▶ Run</button>
+          <div class="output" id="out-curry"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="fn-name">partial</span>
+          <span class="fn-badge">часткове застосування</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Фіксує перші аргументи функції, повертаючи нову функцію, що очікує решту. Корисно для створення спеціалізованих версій загальних функцій.</p>
+          <div class="code-block">const multiply = (a, b) => a * b;
+const triple = partial(multiply, 3);
+
+triple(5);   // → 15
+triple(10);  // → 30
+
+const greet = (greeting, name) =>
+  `${greeting}, ${name}!`;
+const hello = partial(greet, 'Hello');
+hello('Михайло');  // → 'Hello, Михайло!'</div>
+          <button class="run-btn" data-demo="partial">▶ Run</button>
+          <div class="output" id="out-partial"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- memoize -->
+  <div class="section">
+    <div class="section-title">5 — memoize</div>
+    <div class="cards">
+
+      <div class="card" style="grid-column: 1 / -1; max-width: 720px;">
+        <div class="card-header">
+          <span class="fn-name">memoize</span>
+          <span class="fn-badge">кеш · benchmark</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Кешує результати виклику чистої функції. Повторний виклик з тими самими аргументами повертає збережений результат миттєво, без повторного обчислення.</p>
+          <div class="code-block">// Число Фібоначчі (без мемоізації — експоненційний час)
+const fib = memoize(n =>
+  n <= 1 ? n : fib(n - 1) + fib(n - 2)
+);</div>
+          <div class="bench-row">
+            <label>n =</label>
+            <input type="number" id="fib-n" value="40" min="1" max="50">
+            <button class="run-btn" id="bench-btn">▶ Benchmark</button>
+          </div>
+          <div class="output" id="out-memo" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Chainable API -->
+  <div class="section">
+    <div class="section-title">Chainable API</div>
+    <div class="cards">
+
+      <div class="card" style="grid-column: 1 / -1; max-width: 800px;">
+        <div class="card-header">
+          <span class="fn-name">chain(data).map().filter().reduce()</span>
+          <span class="fn-badge">fluent interface</span>
+        </div>
+        <div class="card-body">
+          <p class="desc">Обгортка Chain дозволяє будувати ланцюжки трансформацій у читабельному стилі. Оригінальний масив не змінюється — кожна операція створює нову Chain.</p>
+          <button class="run-btn" id="chain-btn" style="margin-bottom:14px;">▶ Run pipeline</button>
+          <div class="chain-steps" id="chain-steps"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="section">
+    <div class="section-title">Playground</div>
+    <div class="playground">
+      <div class="playground-header">
+        <span class="playground-title">// live editor — всі функції доступні</span>
+        <button class="run-btn" id="pg-run">▶ Run</button>
+      </div>
+      <textarea id="pg-code">// Всі функції доступні: map, filter, reduce, compose, pipe,
+// curry, partial, memoize, chain, flatMap, groupBy, zip, uniq
+
+const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+const result = chain(data)
+  .filter(x => x % 2 === 0)     // [2, 4, 6, 8, 10]
+  .map(x => x * x)               // [4, 16, 36, 64, 100]
+  .reduce((a, b) => a + b, 0);  // 220
+
+return result;</textarea>
+      <div class="playground-footer">
+        <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;">→</span>
+        <div id="playground-output"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script type="module">
+// ─── Вбудована бібліотека (inline, щоб сторінка працювала без сервера) ────────
+
+const map = fn => arr => {
+  const r = [];
+  for (let i = 0; i < arr.length; i++) r.push(fn(arr[i], i, arr));
+  return r;
+};
+
+const filter = pred => arr => {
+  const r = [];
+  for (let i = 0; i < arr.length; i++) if (pred(arr[i], i, arr)) r.push(arr[i]);
+  return r;
+};
+
+const reduce = (fn, init) => arr => {
+  let acc = init, s = 0;
+  if (acc === undefined) { if (!arr.length) throw new TypeError('empty reduce'); acc = arr[0]; s = 1; }
+  for (let i = s; i < arr.length; i++) acc = fn(acc, arr[i], i, arr);
+  return acc;
+};
+
+const compose = (...fns) => x => fns.reduceRight((a, f) => f(a), x);
+const pipe    = (...fns) => x => fns.reduce((a, f) => f(a), x);
+
+const curry = fn => {
+  const arity = fn.length;
+  const c = (...a) => a.length >= arity ? fn(...a) : (...b) => c(...a, ...b);
+  return c;
+};
+
+const partial = (fn, ...pre) => (...rest) => fn(...pre, ...rest);
+
+const memoize = (fn, key = (...a) => JSON.stringify(a)) => {
+  const cache = new Map();
+  const m = (...a) => {
+    const k = key(...a);
+    if (cache.has(k)) return cache.get(k);
+    const v = fn(...a);
+    cache.set(k, v);
+    return v;
+  };
+  m.cache = cache;
+  m.clearCache = () => cache.clear();
+  return m;
+};
+
+class Chain {
+  constructor(d) { this._d = [...d]; }
+  map(fn)    { return new Chain(map(fn)(this._d)); }
+  filter(fn) { return new Chain(filter(fn)(this._d)); }
+  reduce(fn, init) { return reduce(fn, init)(this._d); }
+  pipe(...fns) { return new Chain(pipe(...fns)(this._d)); }
+  value() { return this._d; }
+}
+const chain = d => new Chain(d);
+
+const flatMap  = fn => arr => reduce((a, x) => [...a, ...([].concat(fn(x)))], [])(arr);
+const groupBy  = kf => arr => reduce((a, x) => { const k = kf(x); return {...a, [k]: [...(a[k]||[]), x]}; }, {})(arr);
+const zip      = a1 => a2 => { const r=[]; for(let i=0;i<Math.min(a1.length,a2.length);i++) r.push([a1[i],a2[i]]); return r; };
+const uniq     = arr => [...new Set(arr)];
+
+// ─── Хелпери ──────────────────────────────────────────────────────────────────
+
+const show = (id, val, isErr) => {
+  const el = document.getElementById(id);
+  el.textContent = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+  el.classList.toggle('error', !!isErr);
+  el.classList.add('visible');
+};
+
+// ─── Демо: map ────────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="map"]').addEventListener('click', () => {
+  const r1 = map(x => x * 2)([1,2,3,4,5]);
+  const r2 = map(x => x.toUpperCase())(['a','b','c']);
+  show('out-map', `double: ${JSON.stringify(r1)}\nupperCase: ${JSON.stringify(r2)}`);
+});
+
+// ─── Демо: filter ─────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="filter"]').addEventListener('click', () => {
+  const r1 = filter(x => x % 2 === 0)([1,2,3,4,5,6]);
+  const r2 = filter(x => x.age >= 18)([{name:'Alice',age:17},{name:'Bob',age:22}]);
+  show('out-filter', `isEven: ${JSON.stringify(r1)}\nadults: ${JSON.stringify(r2)}`);
+});
+
+// ─── Демо: reduce ─────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="reduce"]').addEventListener('click', () => {
+  const sum = reduce((a, x) => a + x, 0)([1,2,3,4,5]);
+  const freq = reduce((a, w) => ({...a, [w]: (a[w]||0)+1}), {})(['a','b','a','c','b','a']);
+  show('out-reduce', `sum: ${sum}\nfreq: ${JSON.stringify(freq)}`);
+});
+
+// ─── Демо: compose ────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="compose"]').addEventListener('click', () => {
+  const process = compose(
+    x => x.toUpperCase(),
+    x => x.trim(),
+    x => x.replace(/,/g, '')
+  );
+  show('out-compose', `'  hello, world  ' → '${process('  hello, world  ')}'`);
+});
+
+// ─── Демо: pipe ───────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="pipe"]').addEventListener('click', () => {
+  const normalize = pipe(
+    s => s.toLowerCase(),
+    s => s.trim(),
+    s => s.replace(/\s+/g, '-'),
+    s => `slug:${s}`
+  );
+  show('out-pipe', `'  Hello World  ' → '${normalize('  Hello World  ')}'`);
+});
+
+// ─── Демо: curry ──────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="curry"]').addEventListener('click', () => {
+  const add = curry((a, b, c) => a + b + c);
+  show('out-curry',
+    `add(1)(2)(3) = ${add(1)(2)(3)}\n` +
+    `add(1,2)(3)  = ${add(1,2)(3)}\n` +
+    `add(1)(2,3)  = ${add(1)(2,3)}\n` +
+    `add(1,2,3)   = ${add(1,2,3)}\n` +
+    `add(10)(5)(3) = ${add(10)(5)(3)}`
+  );
+});
+
+// ─── Демо: partial ────────────────────────────────────────────────────────────
+document.querySelector('[data-demo="partial"]').addEventListener('click', () => {
+  const multiply = (a, b) => a * b;
+  const triple = partial(multiply, 3);
+  const greet = (greeting, name) => `${greeting}, ${name}!`;
+  const hello = partial(greet, 'Hello');
+  show('out-partial',
+    `triple(5)  = ${triple(5)}\n` +
+    `triple(10) = ${triple(10)}\n` +
+    `hello('Михайло') = '${hello('Михайло')}'`
+  );
+});
+
+// ─── Демо: memoize benchmark ──────────────────────────────────────────────────
+document.getElementById('bench-btn').addEventListener('click', () => {
+  const n = parseInt(document.getElementById('fib-n').value, 10);
+
+  // Без мемоізації
+  const fib = n2 => n2 <= 1 ? n2 : fib(n2-1) + fib(n2-2);
+  const t1s = performance.now();
+  const r1 = n <= 35 ? fib(n) : '(пропущено — >35 без memo займе занадто довго)';
+  const t1e = performance.now();
+
+  // З мемоізацією
+  const fibM = memoize(n2 => n2 <= 1 ? n2 : fibM(n2-1) + fibM(n2-2));
+  const t2s = performance.now();
+  const r2 = fibM(n);
+  const t2e = performance.now();
+
+  // Повторний виклик — з кешу
+  const t3s = performance.now();
+  fibM(n);
+  const t3e = performance.now();
+
+  const el = document.getElementById('out-memo');
+  el.textContent =
+    `fib(${n}) = ${r2}\n` +
+    `Без memo:    ${typeof r1 === 'number' ? (t1e-t1s).toFixed(3)+' ms' : r1}\n` +
+    `З memo:      ${(t2e-t2s).toFixed(3)} ms\n` +
+    `Повторно:    ${(t3e-t3s).toFixed(4)} ms (cache hit)\n` +
+    `Записів у кеші: ${fibM.cache.size}`;
+  el.classList.add('visible');
+  el.classList.remove('error');
+});
+
+// ─── Демо: Chain ──────────────────────────────────────────────────────────────
+document.getElementById('chain-btn').addEventListener('click', () => {
+  const data = [1,2,3,4,5,6,7,8,9,10];
+  const steps = [];
+
+  steps.push({ label: 'source', value: JSON.stringify(data) });
+
+  const s1 = chain(data).filter(x => x % 2 === 0);
+  steps.push({ label: '.filter(even)', value: JSON.stringify(s1.value()) });
+
+  const s2 = s1.map(x => x * x);
+  steps.push({ label: '.map(x²)', value: JSON.stringify(s2.value()) });
+
+  const s3 = s2.map(x => x - 1);
+  steps.push({ label: '.map(x-1)', value: JSON.stringify(s3.value()) });
+
+  const result = s3.reduce((a, b) => a + b, 0);
+  steps.push({ label: '.reduce(+)', value: String(result) });
+
+  const container = document.getElementById('chain-steps');
+  container.innerHTML = steps.map(s =>
+    `<div class="chain-step"><span class="step-label">${s.label}</span><span class="step-value">${s.value}</span></div>`
+  ).join('');
+});
+
+// ─── Playground ───────────────────────────────────────────────────────────────
+const runPlayground = () => {
+  const code = document.getElementById('pg-code').value;
+  const out  = document.getElementById('playground-output');
+  try {
+    const fn = new Function(
+      'map','filter','reduce','compose','pipe','curry','partial','memoize',
+      'chain','flatMap','groupBy','zip','uniq',
+      code
+    );
+    const result = fn(map,filter,reduce,compose,pipe,curry,partial,memoize,
+                      chain,flatMap,groupBy,zip,uniq);
+    out.textContent = result !== undefined
+      ? (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result))
+      : '(undefined)';
+    out.classList.remove('error');
+  } catch(e) {
+    out.textContent = e.message;
+    out.classList.add('error');
+  }
+};
+
+document.getElementById('pg-run').addEventListener('click', runPlayground);
+document.getElementById('pg-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runPlayground();
+});
+</script>
+</body>
+</html>
