@@ -188,7 +188,7 @@ chain([1,2,3]).map(x => x*2).value(); // → [2, 4, 6]
 
 ## Demo відео
 
-> 📹 [Посилання на відео-демонстрацію](#) *(додати після запису)*
+>https://github.com/imenshov-ctrl/js-hof-variant1/blob/main/HOF%20Library%20%E2%80%94%20Demo%20-%20Google%20Chrome%202026-04-28%2018-30-40.mp4
 
 ---
 
